@@ -5,6 +5,7 @@ import { action } from "@ember/object";
 import { inject as service } from "@ember/service";
 import DModal from "discourse/components/d-modal";
 import DButton from "discourse/components/d-button";
+import { on } from "@ember/modifier";  // 👈 关键：导入 on 修饰符
 import { eq } from "truth-helpers";
 
 // 定义模态框组件
