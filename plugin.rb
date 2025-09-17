@@ -78,7 +78,7 @@ after_initialize do
       return unless draw_time.present?
       
       if draw_time <= Time.current
-        errors.add(:draw_time, I18n.t('lottery.errors.draw_time_must_be_future'))
+        errors.add(:draw_time, 'must be in the future')
       end
     end
 
@@ -88,12 +88,12 @@ after_initialize do
       begin
         floors = specific_floor_numbers
         if floors.empty?
-          errors.add(:specific_floors, I18n.t('lottery.errors.invalid_floor_format'))
+          errors.add(:specific_floors, 'invalid floor format')
         elsif floors.any? { |f| f <= 0 }
-          errors.add(:specific_floors, I18n.t('lottery.errors.floor_must_be_positive'))
+          errors.add(:specific_floors, 'floor must be positive')
         end
       rescue
-        errors.add(:specific_floors, I18n.t('lottery.errors.invalid_floor_format'))
+        errors.add(:specific_floors, 'invalid floor format')
       end
     end
   end
@@ -125,101 +125,104 @@ after_initialize do
     has_one :user, serializer: BasicUserSerializer
   end
 
-  # 控制器
-  class ::Lottery::EventsController < ApplicationController
-    requires_plugin 'custom-toolbar-modal'
-    before_action :ensure_logged_in
-    before_action :find_post, only: [:create, :update, :destroy]
-    before_action :find_lottery_event, only: [:show, :update, :destroy, :draw_winners, :cancel_event]
+  # 定义命名空间模块
+  module ::Lottery
+    # 控制器
+    class EventsController < ApplicationController
+      requires_plugin 'custom-toolbar-modal'
+      before_action :ensure_logged_in
+      before_action :find_post, only: [:create, :update, :destroy]
+      before_action :find_lottery_event, only: [:show, :update, :destroy, :draw_winners, :cancel_event]
 
-    def show
-      guardian.ensure_can_see!(@lottery_event.post)
-      render json: LotteryEventSerializer.new(@lottery_event)
-    end
-
-    def create
-      guardian.ensure_can_edit!(@post)
-
-      @lottery_event = LotteryEvent.new(lottery_event_params)
-      @lottery_event.post = @post
-      @lottery_event.status = 'active'
-
-      if @lottery_event.save
-        # 更新帖子内容，嵌入抽奖信息
-        Jobs.enqueue(:update_post_with_lottery, post_id: @post.id, lottery_event_id: @lottery_event.id)
+      def show
+        guardian.ensure_can_see!(@lottery_event.post)
         render json: LotteryEventSerializer.new(@lottery_event)
-      else
-        render json: { errors: @lottery_event.errors }, status: 422
-      end
-    end
-
-    def update
-      guardian.ensure_can_edit!(@lottery_event.post)
-      
-      if @lottery_event.update(lottery_event_params)
-        Jobs.enqueue(:update_post_with_lottery, post_id: @lottery_event.post_id, lottery_event_id: @lottery_event.id)
-        render json: LotteryEventSerializer.new(@lottery_event)
-      else
-        render json: { errors: @lottery_event.errors }, status: 422
-      end
-    end
-
-    def destroy
-      guardian.ensure_can_edit!(@lottery_event.post)
-      
-      @lottery_event.update!(status: 'cancelled')
-      Jobs.enqueue(:remove_lottery_from_post, post_id: @lottery_event.post_id)
-      
-      render json: { success: true }
-    end
-
-    def draw_winners
-      guardian.ensure_can_edit!(@lottery_event.post)
-
-      unless @lottery_event.can_draw?
-        return render json: { error: I18n.t('lottery.errors.cannot_draw') }, status: 422
       end
 
-      draw_service = LotteryDrawService.new(@lottery_event)
-      result = draw_service.execute
+      def create
+        guardian.ensure_can_edit!(@post)
 
-      if result[:success]
-        render json: { 
-          winners: result[:winners].map { |w| LotteryWinnerSerializer.new(w) },
-          message: result[:message]
-        }
-      else
-        render json: { error: result[:error] }, status: 422
-      end
-    end
+        @lottery_event = LotteryEvent.new(lottery_event_params)
+        @lottery_event.post = @post
+        @lottery_event.status = 'active'
 
-    def cancel_event
-      guardian.ensure_can_edit!(@lottery_event.post)
-      
-      if @lottery_event.status == 'drawn'
-        return render json: { error: I18n.t('lottery.errors.already_drawn') }, status: 422
+        if @lottery_event.save
+          # 更新帖子内容，嵌入抽奖信息
+          Jobs.enqueue(:update_post_with_lottery, post_id: @post.id, lottery_event_id: @lottery_event.id)
+          render json: LotteryEventSerializer.new(@lottery_event)
+        else
+          render json: { errors: @lottery_event.errors }, status: 422
+        end
       end
 
-      @lottery_event.update!(status: 'cancelled')
-      render json: { success: true }
-    end
+      def update
+        guardian.ensure_can_edit!(@lottery_event.post)
+        
+        if @lottery_event.update(lottery_event_params)
+          Jobs.enqueue(:update_post_with_lottery, post_id: @lottery_event.post_id, lottery_event_id: @lottery_event.id)
+          render json: LotteryEventSerializer.new(@lottery_event)
+        else
+          render json: { errors: @lottery_event.errors }, status: 422
+        end
+      end
 
-    private
+      def destroy
+        guardian.ensure_can_edit!(@lottery_event.post)
+        
+        @lottery_event.update!(status: 'cancelled')
+        Jobs.enqueue(:remove_lottery_from_post, post_id: @lottery_event.post_id)
+        
+        render json: { success: true }
+      end
 
-    def find_post
-      @post = Post.find(params[:post_id])
-    end
+      def draw_winners
+        guardian.ensure_can_edit!(@lottery_event.post)
 
-    def find_lottery_event
-      @lottery_event = LotteryEvent.find(params[:id])
-    end
+        unless @lottery_event.can_draw?
+          return render json: { error: 'Cannot draw winners at this time' }, status: 422
+        end
 
-    def lottery_event_params
-      params.require(:lottery_event).permit(
-        :activity_name, :prize_description, :prize_image_url, :draw_time,
-        :winner_count, :specific_floors, :participation_threshold,
-        :backup_strategy, :additional_notes
-      )
+        draw_service = LotteryDrawService.new(@lottery_event)
+        result = draw_service.execute
+
+        if result[:success]
+          render json: { 
+            winners: result[:winners].map { |w| LotteryWinnerSerializer.new(w) },
+            message: result[:message]
+          }
+        else
+          render json: { error: result[:error] }, status: 422
+        end
+      end
+
+      def cancel_event
+        guardian.ensure_can_edit!(@lottery_event.post)
+        
+        if @lottery_event.status == 'drawn'
+          return render json: { error: 'Already drawn' }, status: 422
+        end
+
+        @lottery_event.update!(status: 'cancelled')
+        render json: { success: true }
+      end
+
+      private
+
+      def find_post
+        @post = Post.find(params[:post_id])
+      end
+
+      def find_lottery_event
+        @lottery_event = LotteryEvent.find(params[:id])
+      end
+
+      def lottery_event_params
+        params.require(:lottery_event).permit(
+          :activity_name, :prize_description, :prize_image_url, :draw_time,
+          :winner_count, :specific_floors, :participation_threshold,
+          :backup_strategy, :additional_notes
+        )
+      end
     end
   end
 
@@ -231,7 +234,7 @@ after_initialize do
     end
 
     def execute
-      return { success: false, error: I18n.t('lottery.errors.already_drawn') } if @lottery_event.status == 'drawn'
+      return { success: false, error: 'Already drawn' } if @lottery_event.status == 'drawn'
       
       participants = get_participants
       
@@ -251,9 +254,9 @@ after_initialize do
         create_winner_records(winners)
         notify_winners(winners)
         
-        { success: true, winners: @lottery_event.lottery_winners.includes(:user), message: I18n.t('lottery.draw_success') }
+        { success: true, winners: @lottery_event.lottery_winners.includes(:user), message: 'Draw completed successfully' }
       else
-        { success: false, error: I18n.t('lottery.errors.no_winners') }
+        { success: false, error: 'No winners selected' }
       end
     end
 
@@ -269,17 +272,17 @@ after_initialize do
     def handle_insufficient_participants
       if @lottery_event.backup_strategy == 'cancel'
         @lottery_event.update!(status: 'cancelled')
-        { success: false, error: I18n.t('lottery.errors.cancelled_insufficient_participants') }
+        { success: false, error: 'Event cancelled due to insufficient participants' }
       else
         # 继续开奖，用现有参与者
         participants = get_participants
         winners = draw_random_winners(participants)
         
         @lottery_event.update!(status: 'drawn')
-        create_winner_records(winners)
+        create_winner_records(winners) if winners.any?
         
         { success: true, winners: @lottery_event.lottery_winners.includes(:user), 
-          message: I18n.t('lottery.draw_success_with_warning') }
+          message: 'Draw completed with warning: insufficient participants' }
       end
     end
 
@@ -319,7 +322,6 @@ after_initialize do
 
     def notify_winners(winners)
       # 可以在这里实现中奖通知功能
-      # 比如发送系统消息或邮件通知
     end
   end
 
@@ -332,11 +334,9 @@ after_initialize do
       lottery_markdown = build_lottery_markdown(lottery_event)
       new_raw = insert_or_replace_lottery(post.raw, lottery_markdown)
       
-      cooked = PrettyText.cook(new_raw)
-      
       post.revise(
         Discourse.system_user,
-        { raw: new_raw, edit_reason: I18n.t("lottery.post_updated") },
+        { raw: new_raw, edit_reason: "Updated lottery event" },
         skip_validations: true
       )
     end
@@ -378,7 +378,7 @@ after_initialize do
       
       post.revise(
         Discourse.system_user,
-        { raw: new_raw, edit_reason: I18n.t("lottery.removed") },
+        { raw: new_raw, edit_reason: "Removed lottery" },
         skip_validations: true
       )
     end
