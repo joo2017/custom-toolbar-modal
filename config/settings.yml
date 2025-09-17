@@ -1,7 +1,13 @@
+# config/settings.yml
 plugins:
-  custom_toolbar_modal_enabled:
-    default: true
+  my_plugin_enabled:
+    default: false
     client: true
-  custom_toolbar_modal_button_text:
-    default: "自定义表单"
+  my_plugin_max_forms:
+    default: 5
+    client: true
+    min: 1
+    max: 20
+  my_plugin_require_approval:
+    default: true
     client: true
