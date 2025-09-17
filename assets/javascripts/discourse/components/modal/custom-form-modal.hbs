@@ -1,0 +1,201 @@
+<DModal 
+  @title="自定义内容表单" 
+  @closeModal={{@closeModal}} 
+  class="custom-form-modal"
+  @flash={{this.flash}}
+>
+  <:body>
+    <div class="custom-form-container">
+      {{! 标题输入 }}
+      <div class="form-group">
+        <label for="form-title" class="form-label">
+          标题 <span class="required">*</span>
+        </label>
+        <input 
+          type="text" 
+          id="form-title"
+          class="form-control {{if this.validationErrors.title 'error'}}"
+          value={{this.formTitle}}
+          placeholder="请输入标题..."
+          {{on "input" this.updateTitle}}
+          maxlength="100"
+        />
+        {{#if this.validationErrors.title}}
+          <div class="validation-error">{{this.validationErrors.title}}</div>
+        {{/if}}
+      </div>
+
+      {{! 分类选择 }}
+      <div class="form-group">
+        <label for="form-category" class="form-label">分类</label>
+        <select 
+          id="form-category"
+          class="form-control"
+          {{on "change" this.updateCategory}}
+        >
+          <option value="general" selected={{eq this.formCategory "general"}}>常规</option>
+          <option value="announcement" selected={{eq this.formCategory "announcement"}}>公告</option>
+          <option value="question" selected={{eq this.formCategory "question"}}>问题</option>
+          <option value="tutorial" selected={{eq this.formCategory "tutorial"}}>教程</option>
+        </select>
+      </div>
+
+      {{! 内容输入 }}
+      <div class="form-group">
+        <label for="form-content" class="form-label">
+          内容 <span class="required">*</span>
+        </label>
+        <textarea 
+          id="form-content"
+          class="form-control {{if this.validationErrors.content 'error'}}"
+          rows="6"
+          placeholder="请输入内容..."
+          {{on "input" this.updateContent}}
+        >{{this.formContent}}</textarea>
+        {{#if this.validationErrors.content}}
+          <div class="validation-error">{{this.validationErrors.content}}</div>
+        {{/if}}
+        <div class="form-help">支持 Markdown 格式</div>
+      </div>
+
+      {{! 预览区域 }}
+      {{#if (and this.formTitle this.formContent)}}
+        <div class="form-group preview-section">
+          <label class="form-label">预览</label>
+          <div class="preview-content">
+            <h3>{{this.formTitle}}</h3>
+            <p>{{this.formContent}}</p>
+            <small><em>分类: {{this.getCategoryDisplayName}}</em></small>
+          </div>
+        </div>
+      {{/if}}
+    </div>
+  </:body>
+
+  <:footer>
+    <div class="modal-footer-buttons">
+      {{! 重置按钮 }}
+      <button 
+        type="button" 
+        class="btn btn-default"
+        {{on "click" this.resetForm}}
+        disabled={{this.isSubmitting}}
+      >
+        {{d-icon "refresh"}} 重置
+      </button>
+
+      {{! 取消按钮 }}
+      <button 
+        type="button" 
+        class="btn btn-default"
+        {{on "click" this.cancel}}
+        disabled={{this.isSubmitting}}
+      >
+        {{d-icon "times"}} 取消
+      </button>
+
+      {{! 提交按钮 }}
+      <button 
+        type="submit" 
+        class="btn btn-primary"
+        {{on "click" this.submitForm}}
+        disabled={{or this.isSubmitting (not (and this.formTitle this.formContent))}}
+      >
+        {{#if this.isSubmitting}}
+          {{d-icon "spinner" class="loading-icon"}} 提交中...
+        {{else}}
+          {{d-icon "check"}} 插入内容
+        {{/if}}
+      </button>
+    </div>
+  </:footer>
+</DModal>
+
+<style>
+  .custom-form-modal {
+    max-width: 600px;
+  }
+
+  .custom-form-container .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .custom-form-container .form-label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: var(--primary);
+  }
+
+  .custom-form-container .required {
+    color: var(--danger);
+  }
+
+  .custom-form-container .form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--primary-low-mid);
+    border-radius: 4px;
+    background: var(--secondary);
+    color: var(--primary);
+    font-size: 14px;
+  }
+
+  .custom-form-container .form-control:focus {
+    outline: none;
+    border-color: var(--tertiary);
+    box-shadow: 0 0 0 2px var(--tertiary-low);
+  }
+
+  .custom-form-container .form-control.error {
+    border-color: var(--danger);
+  }
+
+  .custom-form-container .validation-error {
+    color: var(--danger);
+    font-size: 12px;
+    margin-top: 0.25rem;
+  }
+
+  .custom-form-container .form-help {
+    font-size: 12px;
+    color: var(--primary-medium);
+    margin-top: 0.25rem;
+  }
+
+  .custom-form-container .preview-section {
+    border-top: 1px solid var(--primary-low);
+    padding-top: 1rem;
+  }
+
+  .custom-form-container .preview-content {
+    background: var(--primary-very-low);
+    padding: 1rem;
+    border-radius: 4px;
+    border: 1px solid var(--primary-low);
+  }
+
+  .custom-form-container .preview-content h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--primary);
+  }
+
+  .custom-form-container .preview-content p {
+    margin: 0 0 0.5rem 0;
+  }
+
+  .modal-footer-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+
+  .modal-footer-buttons .loading-icon {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
