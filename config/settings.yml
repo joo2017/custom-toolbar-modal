@@ -1,13 +1,4 @@
-# config/settings.yml
 plugins:
-  my_plugin_enabled:
-    default: false
-    client: true
-  my_plugin_max_forms:
-    default: 5
-    client: true
-    min: 1
-    max: 20
-  my_plugin_require_approval:
+  custom_toolbar_modal_enabled:
     default: true
     client: true
