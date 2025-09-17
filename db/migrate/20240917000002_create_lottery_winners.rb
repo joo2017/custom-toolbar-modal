@@ -11,7 +11,7 @@ class CreateLotteryWinners < ActiveRecord::Migration[7.0]
     end
 
     add_index :lottery_winners, [:lottery_event_id, :user_id], unique: true
-    add_index :lottery_winners, :lottery_event_id
+  #  add_index :lottery_winners, :lottery_event_id
     add_index :lottery_winners, :user_id
   end
 end
