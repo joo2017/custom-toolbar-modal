@@ -2,6 +2,3 @@ plugins:
   custom_toolbar_modal_enabled:
     default: true
     client: true
-  custom_toolbar_modal_title:
-    default: "示例标题"
-    client: true
