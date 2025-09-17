@@ -1,6 +1,8 @@
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
+import { on } from "@ember/modifier";  // 导入 on modifier
+import { fn } from "@ember/helper";    // 导入 fn helper
 import DModal from "discourse/components/d-modal";
 import DButton from "discourse/components/d-button";
 import DModalCancel from "discourse/components/d-modal-cancel";
@@ -38,9 +40,7 @@ export default class LotteryFormModal extends Component {
     this.isSubmitting = true;
     
     try {
-      // 这里添加你的提交逻辑
       console.log("提交数据:", this.formData);
-      // 提交成功后关闭模态框
       this.args.closeModal();
     } catch (error) {
       console.error("提交失败:", error);
@@ -78,24 +78,32 @@ export default class LotteryFormModal extends Component {
       <:body>
         <div class="lottery-form-container">
           <form {{on "submit" this.submitForm}}>
-            {{! 活动名称 }}
+            
             <div class="form-group">
               <label class="form-label">活动名称 <span class="required">*</span></label>
               <input
                 type="text"
-                class="form-control {{if this.validationErrors.activity_name 'error'}}"
+                class="form-control"
                 value={{this.formData.activity_name}}
                 placeholder="请输入活动名称"
                 {{on "input" (fn this.updateField "activity_name")}}
                 maxlength="200"
               />
-              {{#if this.validationErrors.activity_name}}
-                <div class="validation-error">{{this.validationErrors.activity_name}}</div>
-              {{/if}}
             </div>
 
-            {{! 你的其他表单字段... }}
-            {{! 为了简洁，我只展示一个字段，其他字段保持原样 }}
+            <div class="form-group">
+              <label class="form-label">奖品说明 <span class="required">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                value={{this.formData.prize_description}}
+                placeholder="请描述奖品内容"
+                {{on "input" (fn this.updateField "prize_description")}}
+                maxlength="1000"
+              />
+            </div>
+
+            <!-- 其他字段保持相同结构 -->
 
           </form>
         </div>
