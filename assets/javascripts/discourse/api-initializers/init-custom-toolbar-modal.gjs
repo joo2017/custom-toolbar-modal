@@ -4,6 +4,7 @@ import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
 import { service } from "@ember/service";
 import { on } from "@ember/modifier";
+import { eq } from "truth-helpers";  // 添加这行！
 import DModal from "discourse/components/d-modal";
 import DButton from "discourse/components/d-button";
 import DModalCancel from "discourse/components/d-modal-cancel";
@@ -122,7 +123,6 @@ class CustomFormModal extends Component {
       <:body>
         <div class="custom-form-container">
           <form {{on "submit" this.submitForm}}>
-            {{! 标题输入 }}
             <div class="form-group">
               <label for="form-title" class="form-label">
                 标题 <span class="required">*</span>
@@ -141,7 +141,6 @@ class CustomFormModal extends Component {
               {{/if}}
             </div>
 
-            {{! 分类选择 }}
             <div class="form-group">
               <label for="form-category" class="form-label">分类</label>
               <select 
@@ -156,7 +155,6 @@ class CustomFormModal extends Component {
               </select>
             </div>
 
-            {{! 内容输入 }}
             <div class="form-group">
               <label for="form-content" class="form-label">
                 内容 <span class="required">*</span>
@@ -173,25 +171,12 @@ class CustomFormModal extends Component {
               {{/if}}
               <div class="form-help">支持 Markdown 格式</div>
             </div>
-
-            {{! 预览区域 }}
-            {{#if (and this.formTitle this.formContent)}}
-              <div class="form-group preview-section">
-                <label class="form-label">预览</label>
-                <div class="preview-content">
-                  <h3>{{this.formTitle}}</h3>
-                  <p>{{this.formContent}}</p>
-                  <small><em>分类: {{this.getCategoryDisplayName}}</em></small>
-                </div>
-              </div>
-            {{/if}}
           </form>
         </div>
       </:body>
 
       <:footer>
         <div class="modal-footer-buttons">
-          {{! 重置按钮 }}
           <DButton 
             @action={{this.resetForm}}
             @disabled={{this.isSubmitting}}
@@ -200,13 +185,11 @@ class CustomFormModal extends Component {
             重置
           </DButton>
 
-          {{! 取消按钮 }}
           <DModalCancel @close={{this.cancel}} />
 
-          {{! 提交按钮 }}
           <DButton 
             @action={{this.submitForm}}
-            @disabled={{or this.isSubmitting (not (and this.formTitle this.formContent))}}
+            @disabled={{this.isSubmitting}}
             class="btn-primary"
           >
             {{#if this.isSubmitting}}
@@ -269,27 +252,6 @@ class CustomFormModal extends Component {
         font-size: 12px;
         color: var(--primary-medium);
         margin-top: 0.25rem;
-      }
-
-      .custom-form-container .preview-section {
-        border-top: 1px solid var(--primary-low);
-        padding-top: 1rem;
-      }
-
-      .custom-form-container .preview-content {
-        background: var(--primary-very-low);
-        padding: 1rem;
-        border-radius: 4px;
-        border: 1px solid var(--primary-low);
-      }
-
-      .custom-form-container .preview-content h3 {
-        margin: 0 0 0.5rem 0;
-        color: var(--primary);
-      }
-
-      .custom-form-container .preview-content p {
-        margin: 0 0 0.5rem 0;
       }
 
       .modal-footer-buttons {
