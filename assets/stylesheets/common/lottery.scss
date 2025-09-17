@@ -1,20 +1,24 @@
-// 抽奖模态框样式
 .lottery-form-modal {
-  .modal-body {
-    padding: 20px;
+  // 确保模态框有正确的层级
+  z-index: 1050;
+  
+  .modal-middle-container {
+    max-height: 90vh;
+    overflow-y: auto;
   }
   
   .lottery-form-container {
+    padding: 20px;
     max-width: 600px;
     margin: 0 auto;
   }
   
   .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     
     .form-label {
       display: block;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
       font-weight: 500;
       
       .required {
@@ -29,10 +33,12 @@
     
     .form-control {
       width: 100%;
-      padding: 8px 12px;
+      padding: 10px 12px;
       border: 1px solid var(--primary-low);
-      border-radius: 3px;
+      border-radius: 4px;
       font-size: 14px;
+      background: var(--secondary);
+      color: var(--primary);
       
       &.error {
         border-color: var(--danger);
@@ -45,10 +51,30 @@
       }
     }
     
+    // 修复下拉菜单样式
+    select.form-control {
+      background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23666' d='m2 0-2 2h4zm0 5 2-2h-4z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 12px;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      cursor: pointer;
+      
+      // 确保下拉选项有正确的样式
+      option {
+        background: var(--secondary);
+        color: var(--primary);
+        padding: 8px;
+      }
+    }
+    
     .form-help {
       font-size: 12px;
       color: var(--primary-medium);
       margin-top: 5px;
+      line-height: 1.4;
     }
     
     .validation-error {
@@ -58,9 +84,35 @@
     }
   }
   
-  .modal-footer-buttons {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
+  // 确保模态框底部按钮区域正确显示
+  .modal-footer {
+    padding: 20px;
+    border-top: 1px solid var(--primary-low);
+    background: var(--secondary);
+    
+    .modal-footer-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      align-items: center;
+      
+      .btn {
+        min-width: 80px;
+        white-space: nowrap;
+      }
+    }
+  }
+}
+
+// 确保模态框在所有情况下都能正确显示
+.modal-backdrop {
+  z-index: 1040;
+}
+
+.d-modal {
+  z-index: 1050;
+  
+  .modal-middle-container {
+    z-index: 1051;
   }
 }
