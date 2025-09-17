@@ -1,5 +1,4 @@
 import { withPluginApi } from "discourse/lib/plugin-api";
-import LotteryFormModal from "../components/lottery-form-modal";
 
 export default {
   name: "init-custom-toolbar-modal",
@@ -9,12 +8,14 @@ export default {
       api.onToolbarCreate((toolbar) => {
         toolbar.addButton({
           title: "创建抽奖",
-          id: "lottery-button",
+          id: "lottery-button", 
           group: "extras",
           icon: "gift",
           action: () => {
-            // 使用现代模态框API
-            api.container.lookup("service:modal").show(LotteryFormModal);
+            // 动态导入组件
+            import("../components/lottery-form-modal").then((module) => {
+              api.container.lookup("service:modal").show(module.default);
+            });
           }
         });
       });
