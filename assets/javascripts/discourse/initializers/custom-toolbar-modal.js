@@ -1,25 +1,21 @@
 import { withPluginApi } from "discourse/lib/plugin-api";
-import { h } from "virtual-dom";
+import CustomToolbarModal from "../components/custom-toolbar-modal"; // 注意相对路径
 
 export default {
   name: "custom-toolbar-modal",
-
   initialize() {
     withPluginApi("0.12.0", api => {
+      if (!api.container.lookup("site-settings:main").custom_toolbar_modal_enabled) return;
+
       api.onToolbarCreate(toolbar => {
         toolbar.addButton({
           id: "custom_modal",
           group: "extras",
-          icon: "plus", // 可替换成你喜欢的图标
+          icon: "plus", // 改成任何喜欢的icon
+          title: "Custom Modal",
           perform: () => {
-            // 用 modal 服务弹出模态窗口
-            import("discourse/components/custom-toolbar-modal").then(module => {
-              const { default: CustomToolbarModal } = module;
-              // 获取 modal service 并显示
-              const container = api.container;
-              const modalService = container.lookup("service:modal");
-              modalService.show(CustomToolbarModal);
-            });
+            const modalService = api.container.lookup("service:modal");
+            modalService.show(CustomToolbarModal);
           }
         });
       });
