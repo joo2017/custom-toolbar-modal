@@ -2,3 +2,6 @@ plugins:
   custom_toolbar_modal_enabled:
     default: true
     client: true
+  custom_toolbar_modal_button_text:
+    default: "自定义表单"
+    client: true
