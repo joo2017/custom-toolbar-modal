@@ -1,26 +1,23 @@
+// assets/stylesheets/common/lottery.scss
 .lottery-form-modal {
-  // 确保模态框容器的尺寸
+  // 修复模态框容器尺寸
   .modal-middle-container {
     max-width: 700px;
     width: 90vw;
-    max-height: 85vh; // 减小高度，为footer留空间
+    max-height: 90vh;
     display: flex;
     flex-direction: column;
   }
   
-  // 确保body部分可滚动，footer固定
   .d-modal__body {
     flex: 1;
     overflow-y: auto;
-    max-height: calc(85vh - 120px); // 为header和footer预留空间
+    padding: 0; // 让内部容器控制padding
+    max-height: calc(90vh - 140px); // 为header和footer预留空间
   }
   
   .lottery-form-container {
     padding: 20px;
-    
-    // 移除这里的overflow设置，让外层控制滚动
-    // max-height: 70vh;
-    // overflow-y: auto;
   }
   
   .form-group {
@@ -78,28 +75,11 @@
       }
     }
     
-    select.form-control {
-      cursor: pointer;
-      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-      background-position: right 12px center;
-      background-repeat: no-repeat;
-      background-size: 16px 12px;
-      padding-right: 40px;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
-      
-      option {
-        background: var(--secondary);
-        color: var(--primary);
-        padding: 8px 12px;
-      }
-    }
-    
-    textarea.form-control {
-      resize: vertical;
-      min-height: 80px;
-      line-height: 1.4;
+    .validation-error {
+      color: var(--danger);
+      font-size: 12px;
+      margin-top: 6px;
+      font-weight: 500;
     }
     
     .form-help {
@@ -108,26 +88,17 @@
       margin-top: 6px;
       line-height: 1.4;
     }
-    
-    .validation-error {
-      color: var(--danger);
-      font-size: 12px;
-      margin-top: 6px;
-      font-weight: 500;
-    }
   }
   
-  // 确保footer显示且固定在底部
   .d-modal__footer {
     border-top: 1px solid var(--primary-low);
     padding: 20px;
     background: var(--secondary);
-    display: flex !important; // 强制显示
+    display: flex;
     gap: 10px;
     justify-content: flex-end;
     align-items: center;
-    flex-wrap: wrap;
-    flex-shrink: 0; // 防止footer被压缩
+    flex-shrink: 0;
     
     .btn {
       margin: 0;
@@ -136,70 +107,6 @@
       &.btn-primary {
         min-width: 100px;
       }
-    }
-  }
-}
-
-// 移动端优化
-@media (max-width: 768px) {
-  .lottery-form-modal {
-    .modal-middle-container {
-      width: 95vw;
-      max-height: 90vh;
-      margin: 5vh auto;
-    }
-    
-    .d-modal__body {
-      max-height: calc(90vh - 140px); // 为移动端调整
-    }
-    
-    .lottery-form-container {
-      padding: 15px;
-    }
-    
-    .form-group {
-      margin-bottom: 18px;
-      
-      .form-control {
-        font-size: 16px; // 防止iOS缩放
-        min-height: 44px; // iOS触摸目标
-      }
-    }
-    
-    .d-modal__footer {
-      flex-direction: column-reverse;
-      gap: 12px;
-      padding: 15px;
-      
-      .btn {
-        width: 100%;
-        min-height: 44px;
-      }
-    }
-  }
-}
-
-// 小屏幕特别处理
-@media (max-width: 480px) {
-  .lottery-form-modal {
-    .modal-middle-container {
-      width: 100vw;
-      height: 100vh;
-      max-height: 100vh;
-      margin: 0;
-      border-radius: 0;
-    }
-    
-    .d-modal__body {
-      max-height: calc(100vh - 120px);
-    }
-    
-    .lottery-form-container {
-      padding: 10px;
-    }
-    
-    .d-modal__footer {
-      padding: 10px;
     }
   }
 }
