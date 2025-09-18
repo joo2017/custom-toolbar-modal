@@ -1,4 +1,4 @@
-// assets/javascripts/discourse/api-initializers/lottery-modal-outlet.js
+// assets/javascripts/discourse/api-initializers/lottery-modal-outlet.gjs
 import { withPluginApi } from "discourse/lib/plugin-api";
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
