@@ -6,6 +6,7 @@ import { action } from "@ember/object";
 import { service } from "@ember/service";
 import { on } from "@ember/modifier";
 import { fn } from "@ember/helper";
+import { eq } from "truth-helpers";  // 添加这一行
 import DModal from "discourse/components/d-modal";
 import DButton from "discourse/components/d-button";
 import DModalCancel from "discourse/components/d-modal-cancel";
