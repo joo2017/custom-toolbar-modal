@@ -1,6 +1,8 @@
+// assets/javascripts/discourse/components/lottery-form-modal.gjs
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
+import { service } from "@ember/service";
 import { fn } from "@ember/helper";
 import { on } from "@ember/modifier";
 import { eq } from "truth-helpers";
@@ -9,6 +11,9 @@ import DButton from "discourse/components/d-button";
 import DModalCancel from "discourse/components/d-modal-cancel";
 
 export default class LotteryFormModal extends Component {
+  @service modal;
+  @service appEvents;
+  
   @tracked formData = {
     activity_name: "",
     prize_description: "",
@@ -24,7 +29,12 @@ export default class LotteryFormModal extends Component {
   @tracked validationErrors = {};
   @tracked isSubmitting = false;
 
-  // 确保这个getter总是返回有效数组
+  constructor() {
+    super(...arguments);
+    // 确保模态框正确初始化
+    this.appEvents = this.args.model?.appEvents || this.appEvents;
+  }
+
   get backupStrategyOptions() {
     return [
       { value: "continue", label: "继续抽奖直到找到有效参与者" },
@@ -35,7 +45,7 @@ export default class LotteryFormModal extends Component {
 
   @action
   updateField(fieldName, event) {
-    if (!event || !event.target) return;
+    if (!event?.target) return;
     
     this.formData = {
       ...this.formData,
@@ -45,25 +55,53 @@ export default class LotteryFormModal extends Component {
 
   @action
   async submitForm(event) {
-    if (event) {
-      event.preventDefault();
-    }
+    event?.preventDefault();
+    
+    if (this.isSubmitting) return;
     
     this.isSubmitting = true;
+    this.validationErrors = {};
     
     try {
-      console.log("提交数据:", this.formData);
-      // 这里添加你的提交逻辑
-      
-      // 提交成功后关闭模态框
-      if (this.args.closeModal) {
-        this.args.closeModal();
+      // 基础验证
+      const errors = this.validateForm();
+      if (Object.keys(errors).length > 0) {
+        this.validationErrors = errors;
+        return;
       }
+
+      console.log("提交数据:", this.formData);
+      
+      // TODO: 实际的API调用
+      // const response = await ajax('/lottery/events', {
+      //   type: 'POST',
+      //   data: { lottery_event: this.formData }
+      // });
+      
+      // 模拟成功
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      this.appEvents.trigger("alert-display", {
+        type: "success", 
+        message: "抽奖活动创建成功！"
+      });
+      
+      this.closeModal();
+      
     } catch (error) {
       console.error("提交失败:", error);
+      this.appEvents.trigger("alert-display", {
+        type: "error",
+        message: "创建失败，请重试"
+      });
     } finally {
       this.isSubmitting = false;
     }
+  }
+
+  @action
+  closeModal() {
+    this.modal.close();
   }
 
   @action
@@ -82,8 +120,39 @@ export default class LotteryFormModal extends Component {
     this.validationErrors = {};
   }
 
+  validateForm() {
+    const errors = {};
+    
+    if (!this.formData.activity_name?.trim()) {
+      errors.activity_name = "活动名称不能为空";
+    }
+    
+    if (!this.formData.prize_description?.trim()) {
+      errors.prize_description = "奖品说明不能为空";
+    }
+    
+    if (!this.formData.draw_time) {
+      errors.draw_time = "开奖时间不能为空";
+    } else {
+      const drawTime = new Date(this.formData.draw_time);
+      if (drawTime <= new Date()) {
+        errors.draw_time = "开奖时间必须是未来时间";
+      }
+    }
+    
+    if (this.formData.winner_count < 1) {
+      errors.winner_count = "获奖人数必须大于0";
+    }
+    
+    return errors;
+  }
+
   <template>
-    <DModal @title="创建抽奖活动" @closeModal={{@closeModal}} class="lottery-form-modal">
+    <DModal 
+      @title="创建抽奖活动" 
+      @closeModal={{this.closeModal}} 
+      class="lottery-form-modal"
+    >
       <:body>
         <div class="lottery-form-container">
           <form {{on "submit" this.submitForm}}>
@@ -94,12 +163,15 @@ export default class LotteryFormModal extends Component {
               </label>
               <input
                 type="text"
-                class="form-control"
+                class="form-control {{if this.validationErrors.activity_name 'error'}}"
                 value={{this.formData.activity_name}}
                 placeholder="请输入活动名称"
                 {{on "input" (fn this.updateField "activity_name")}}
                 maxlength="200"
               />
+              {{#if this.validationErrors.activity_name}}
+                <div class="validation-error">{{this.validationErrors.activity_name}}</div>
+              {{/if}}
             </div>
 
             <div class="form-group">
@@ -108,12 +180,15 @@ export default class LotteryFormModal extends Component {
               </label>
               <input
                 type="text"
-                class="form-control"
+                class="form-control {{if this.validationErrors.prize_description 'error'}}"
                 value={{this.formData.prize_description}}
                 placeholder="请描述奖品内容"
                 {{on "input" (fn this.updateField "prize_description")}}
                 maxlength="1000"
               />
+              {{#if this.validationErrors.prize_description}}
+                <div class="validation-error">{{this.validationErrors.prize_description}}</div>
+              {{/if}}
             </div>
 
             <div class="form-group">
@@ -135,10 +210,13 @@ export default class LotteryFormModal extends Component {
               </label>
               <input
                 type="datetime-local"
-                class="form-control"
+                class="form-control {{if this.validationErrors.draw_time 'error'}}"
                 value={{this.formData.draw_time}}
                 {{on "input" (fn this.updateField "draw_time")}}
               />
+              {{#if this.validationErrors.draw_time}}
+                <div class="validation-error">{{this.validationErrors.draw_time}}</div>
+              {{/if}}
             </div>
 
             <div class="form-group">
@@ -147,11 +225,14 @@ export default class LotteryFormModal extends Component {
               </label>
               <input
                 type="number"
-                class="form-control"
+                class="form-control {{if this.validationErrors.winner_count 'error'}}"
                 value={{this.formData.winner_count}}
                 min="1"
                 {{on "input" (fn this.updateField "winner_count")}}
               />
+              {{#if this.validationErrors.winner_count}}
+                <div class="validation-error">{{this.validationErrors.winner_count}}</div>
+              {{/if}}
               <div class="form-help">
                 这是随机抽奖时的获奖人数。如果您想按指定楼层开奖，请直接填写下面的'指定中奖楼层'项。
               </div>
@@ -231,7 +312,7 @@ export default class LotteryFormModal extends Component {
           重置
         </DButton>
 
-        <DModalCancel @close={{@closeModal}} />
+        <DModalCancel @close={{this.closeModal}} />
 
         <DButton
           @action={{this.submitForm}}
