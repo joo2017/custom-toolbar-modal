@@ -13,14 +13,10 @@ export default {
           group: "extras", 
           icon: "gift",
           action: () => {
-            // 官方推荐方式：注入modal服务并调用show()
             const modalService = api.container.lookup("service:modal");
-            const appEvents = api.container.lookup("service:app-events");
-            
             modalService.show(LotteryFormModal, {
               model: {
-                toolbarEvent: toolbar,
-                appEvents: appEvents
+                toolbarEvent: toolbar
               }
             });
           }
