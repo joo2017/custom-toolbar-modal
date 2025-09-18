@@ -1,5 +1,6 @@
 // assets/javascripts/discourse/api-initializers/init-custom-toolbar-modal.js
 import { withPluginApi } from "discourse/lib/plugin-api";
+import LotteryFormModal from "../components/lottery-form-modal";
 
 export default {
   name: "init-custom-toolbar-modal",
@@ -12,20 +13,15 @@ export default {
           group: "extras", 
           icon: "gift",
           action: () => {
-            // 修复：使用正确的服务获取方式
+            // 官方推荐方式：注入modal服务并调用show()
             const modalService = api.container.lookup("service:modal");
             const appEvents = api.container.lookup("service:app-events");
             
-            // 导入模态框组件
-            import("../components/lottery-form-modal").then((module) => {
-              modalService.show(module.default, {
-                model: {
-                  appEvents,
-                  toolbarEvent: toolbar
-                }
-              });
-            }).catch((error) => {
-              console.error("Failed to load lottery modal:", error);
+            modalService.show(LotteryFormModal, {
+              model: {
+                toolbarEvent: toolbar,
+                appEvents: appEvents
+              }
             });
           }
         });
