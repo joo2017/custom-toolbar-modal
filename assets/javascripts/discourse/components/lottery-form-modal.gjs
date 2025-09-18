@@ -1,18 +1,10 @@
-// assets/javascripts/discourse/components/lottery-form-modal.gjs
-import Component from "@glimmer/component";
-import { tracked } from "@glimmer/tracking";
-import { action } from "@ember/object";
-import { service } from "@ember/service";
-import { on } from "@ember/modifier";
-import { fn } from "@ember/helper";
+import { useState } from "discourse/widgets/hooks";
 import DModal from "discourse/components/d-modal";
 import DButton from "discourse/components/d-button";
 import DModalCancel from "discourse/components/d-modal-cancel";
 
-export default class LotteryFormModal extends Component {
-  @service modal;
-  
-  @tracked formData = {
+export default function LotteryFormModal({ closeModal }) {
+  const [formData, setFormData] = useState({
     activity_name: "",
     prize_description: "",
     prize_image_url: "",
@@ -21,73 +13,63 @@ export default class LotteryFormModal extends Component {
     specific_floors: "",
     participation_threshold: 1,
     backup_strategy: "continue",
-    additional_notes: ""
-  };
+    additional_notes: "",
+  });
 
-  @tracked validationErrors = {};
-  @tracked isSubmitting = false;
+  const [validationErrors, setValidationErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  get backupStrategyOptions() {
-    return [
-      { value: "continue", label: "继续抽奖直到找到有效参与者" },
-      { value: "reduce", label: "减少获奖人数" },
-      { value: "cancel", label: "取消抽奖" }
-    ];
-  }
+  const backupStrategyOptions = [
+    { value: "continue", label: "继续抽奖直到找到有效参与者" },
+    { value: "reduce", label: "减少获奖人数" },
+    { value: "cancel", label: "取消抽奖" }
+  ];
 
-  @action
-  updateField(fieldName, event) {
-    if (!event?.target) return;
-    
-    this.formData = {
-      ...this.formData,
-      [fieldName]: event.target.value
+  function updateField(field) {
+    return (e) => {
+      setFormData({ ...formData, [field]: e.target.value });
+      setValidationErrors({ ...validationErrors, [field]: undefined });
     };
-    
-    // 清除字段错误
-    if (this.validationErrors[fieldName]) {
-      this.validationErrors = {
-        ...this.validationErrors,
-        [fieldName]: null
-      };
-    }
   }
 
-  @action
-  async submitForm(event) {
-    event?.preventDefault();
-    
-    if (this.isSubmitting) return;
-    
-    this.isSubmitting = true;
-    this.validationErrors = {};
-    
+  function validateForm() {
+    const errors = {};
+    if (!formData.activity_name.trim()) errors.activity_name = "活动名称不能为空";
+    if (!formData.prize_description.trim()) errors.prize_description = "奖品说明不能为空";
+    if (!formData.draw_time) errors.draw_time = "开奖时间不能为空";
+    else if (new Date(formData.draw_time) <= new Date()) errors.draw_time = "开奖时间必须是未来时间";
+    if (formData.winner_count < 1) errors.winner_count = "获奖人数必须大于0";
+    if (formData.participation_threshold < 0) errors.participation_threshold = "参与门槛不能小于0";
+    return errors;
+  }
+
+  async function submitForm(e) {
+    e?.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      // 基础验证
-      const errors = this.validateForm();
-      if (Object.keys(errors).length > 0) {
-        this.validationErrors = errors;
-        return;
-      }
-
-      console.log("提交数据:", this.formData);
-      
-      // 模拟API调用
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // 关闭模态框
-      this.args.closeModal({ submitted: true });
-      
-    } catch (error) {
-      console.error("提交失败:", error);
+      // 模拟 API 调用
+      await new Promise((r) => setTimeout(r, 1000));
+      // 关闭 modal 并告知已提交
+      closeModal?.({ submitted: true });
+    } catch (e) {
+      // 失败反馈
+      // 可以用 alert() 或 setValidationErrors({ general: '出错了' })
     } finally {
-      this.isSubmitting = false;
+      setIsSubmitting(false);
     }
   }
 
-  @action
-  resetForm() {
-    this.formData = {
+  function resetForm() {
+    setFormData({
       activity_name: "",
       prize_description: "",
       prize_image_url: "",
@@ -96,82 +78,51 @@ export default class LotteryFormModal extends Component {
       specific_floors: "",
       participation_threshold: 1,
       backup_strategy: "continue",
-      additional_notes: ""
-    };
-    this.validationErrors = {};
+      additional_notes: "",
+    });
+    setValidationErrors({});
   }
 
-  validateForm() {
-    const errors = {};
-    
-    if (!this.formData.activity_name?.trim()) {
-      errors.activity_name = "活动名称不能为空";
-    }
-    
-    if (!this.formData.prize_description?.trim()) {
-      errors.prize_description = "奖品说明不能为空";
-    }
-    
-    if (!this.formData.draw_time) {
-      errors.draw_time = "开奖时间不能为空";
-    } else {
-      const drawTime = new Date(this.formData.draw_time);
-      if (drawTime <= new Date()) {
-        errors.draw_time = "开奖时间必须是未来时间";
-      }
-    }
-    
-    if (this.formData.winner_count < 1) {
-      errors.winner_count = "获奖人数必须大于0";
-    }
-    
-    if (this.formData.participation_threshold < 0) {
-      errors.participation_threshold = "参与门槛不能小于0";
-    }
-    
-    return errors;
-  }
-
-  <template>
-    <DModal @title="创建抽奖活动" @closeModal={{@closeModal}} class="lottery-form-modal">
-      <:body>
-        <div class="lottery-form-container">
-          <form {{on "submit" this.submitForm}}>
-            
+  return (
+    <DModal title="创建抽奖活动" closeModal={closeModal} class="lottery-form-modal">
+      {{
+        body: (
+          <form onsubmit={submitForm} class="lottery-form-container">
+            {/* 活动名称 */}
             <div class="form-group">
               <label class="form-label">
                 活动名称 <span class="required">*</span>
               </label>
               <input
                 type="text"
-                class="form-control {{if this.validationErrors.activity_name 'error'}}"
-                value={{this.formData.activity_name}}
+                class={`form-control${validationErrors.activity_name ? " error" : ""}`}
+                value={formData.activity_name}
                 placeholder="请输入活动名称"
-                {{on "input" (fn this.updateField "activity_name")}}
-                maxlength="200"
+                oninput={updateField("activity_name")}
+                maxlength={200}
               />
-              {{#if this.validationErrors.activity_name}}
-                <div class="validation-error">{{this.validationErrors.activity_name}}</div>
-              {{/if}}
+              {validationErrors.activity_name && (
+                <div class="validation-error">{validationErrors.activity_name}</div>
+              )}
             </div>
-
+            {/* 奖品说明 */}
             <div class="form-group">
               <label class="form-label">
                 奖品说明 <span class="required">*</span>
               </label>
               <input
                 type="text"
-                class="form-control {{if this.validationErrors.prize_description 'error'}}"
-                value={{this.formData.prize_description}}
+                class={`form-control${validationErrors.prize_description ? " error" : ""}`}
+                value={formData.prize_description}
                 placeholder="请描述奖品内容"
-                {{on "input" (fn this.updateField "prize_description")}}
-                maxlength="1000"
+                oninput={updateField("prize_description")}
+                maxlength={1000}
               />
-              {{#if this.validationErrors.prize_description}}
-                <div class="validation-error">{{this.validationErrors.prize_description}}</div>
-              {{/if}}
+              {validationErrors.prize_description && (
+                <div class="validation-error">{validationErrors.prize_description}</div>
+              )}
             </div>
-
+            {/* 奖品图片 */}
             <div class="form-group">
               <label class="form-label">
                 奖品图片 <span class="optional">(可选)</span>
@@ -179,46 +130,46 @@ export default class LotteryFormModal extends Component {
               <input
                 type="url"
                 class="form-control"
-                value={{this.formData.prize_image_url}}
+                value={formData.prize_image_url}
                 placeholder="请输入图片URL"
-                {{on "input" (fn this.updateField "prize_image_url")}}
+                oninput={updateField("prize_image_url")}
               />
             </div>
-
+            {/* 开奖时间 */}
             <div class="form-group">
               <label class="form-label">
                 开奖时间 <span class="required">*</span>
               </label>
               <input
                 type="datetime-local"
-                class="form-control {{if this.validationErrors.draw_time 'error'}}"
-                value={{this.formData.draw_time}}
-                {{on "input" (fn this.updateField "draw_time")}}
+                class={`form-control${validationErrors.draw_time ? " error" : ""}`}
+                value={formData.draw_time}
+                oninput={updateField("draw_time")}
               />
-              {{#if this.validationErrors.draw_time}}
-                <div class="validation-error">{{this.validationErrors.draw_time}}</div>
-              {{/if}}
+              {validationErrors.draw_time && (
+                <div class="validation-error">{validationErrors.draw_time}</div>
+              )}
             </div>
-
+            {/* 获奖人数 */}
             <div class="form-group">
               <label class="form-label">
                 获奖人数 <span class="required">*</span>
               </label>
               <input
                 type="number"
-                class="form-control {{if this.validationErrors.winner_count 'error'}}"
-                value={{this.formData.winner_count}}
-                min="1"
-                {{on "input" (fn this.updateField "winner_count")}}
+                class={`form-control${validationErrors.winner_count ? " error" : ""}`}
+                value={formData.winner_count}
+                min={1}
+                oninput={updateField("winner_count")}
               />
-              {{#if this.validationErrors.winner_count}}
-                <div class="validation-error">{{this.validationErrors.winner_count}}</div>
-              {{/if}}
+              {validationErrors.winner_count && (
+                <div class="validation-error">{validationErrors.winner_count}</div>
+              )}
               <div class="form-help">
-                这是随机抽奖时的获奖人数。如果您想按指定楼层开奖，请直接填写下面的'指定中奖楼层'项。
+                这是随机抽奖时的获奖人数。如果您想按指定楼层开奖，请直接填写下面的“指定中奖楼层”项。
               </div>
             </div>
-
+            {/* 指定中奖楼层 */}
             <div class="form-group">
               <label class="form-label">
                 指定中奖楼层 <span class="optional">(可选)</span>
@@ -226,90 +177,74 @@ export default class LotteryFormModal extends Component {
               <input
                 type="text"
                 class="form-control"
-                value={{this.formData.specific_floors}}
-                placeholder="例如：8, 18, 28"
-                {{on "input" (fn this.updateField "specific_floors")}}
+                value={formData.specific_floors}
+                placeholder="例如：8,18,28"
+                oninput={updateField("specific_floors")}
               />
               <div class="form-help">
-                （可选）填写此项将覆盖随机抽奖。请在此填写具体的楼层号，用英文逗号分隔，例如：8, 18, 28。
+                （可选）填写此项将覆盖随机抽奖。请在此填写具体的楼层号，用英文逗号分隔，例如：8,18,28。
               </div>
             </div>
-
+            {/* 参与门槛 */}
             <div class="form-group">
               <label class="form-label">
                 参与门槛 <span class="required">*</span>
               </label>
               <input
                 type="number"
-                class="form-control {{if this.validationErrors.participation_threshold 'error'}}"
-                value={{this.formData.participation_threshold}}
-                min="0"
-                {{on "input" (fn this.updateField "participation_threshold")}}
+                class={`form-control${validationErrors.participation_threshold ? " error" : ""}`}
+                value={formData.participation_threshold}
+                min={0}
+                oninput={updateField("participation_threshold")}
               />
-              {{#if this.validationErrors.participation_threshold}}
-                <div class="validation-error">{{this.validationErrors.participation_threshold}}</div>
-              {{/if}}
+              {validationErrors.participation_threshold && (
+                <div class="validation-error">{validationErrors.participation_threshold}</div>
+              )}
               <div class="form-help">参与抽奖所需的最小楼层数</div>
             </div>
-
+            {/* 后备策略 */}
             <div class="form-group">
               <label class="form-label">
                 后备策略 <span class="required">*</span>
               </label>
               <select
                 class="form-control"
-                {{on "change" (fn this.updateField "backup_strategy")}}
+                value={formData.backup_strategy}
+                onchange={updateField("backup_strategy")}
               >
-                {{#each this.backupStrategyOptions as |option|}}
-                  <option
-                    value={{option.value}}
-                    selected={{if (eq this.formData.backup_strategy option.value) "selected"}}
-                  >
-                    {{option.label}}
-                  </option>
-                {{/each}}
+                {backupStrategyOptions.map((option) => (
+                  <option value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
-
+            {/* 补充说明 */}
             <div class="form-group">
               <label class="form-label">
                 补充说明 <span class="optional">(可选)</span>
               </label>
               <textarea
                 class="form-control"
-                rows="3"
+                rows={3}
                 placeholder="活动的额外说明..."
-                {{on "input" (fn this.updateField "additional_notes")}}
-                maxlength="2000"
-              >{{this.formData.additional_notes}}</textarea>
+                value={formData.additional_notes}
+                oninput={updateField("additional_notes")}
+                maxlength={2000}
+              />
             </div>
           </form>
-        </div>
-      </:body>
-
-      <:footer>
-        <DButton
-          @action={{this.resetForm}}
-          @disabled={{this.isSubmitting}}
-          class="btn-default"
-        >
-          重置
-        </DButton>
-
-        <DModalCancel @close={{@closeModal}} />
-
-        <DButton
-          @action={{this.submitForm}}
-          @disabled={{this.isSubmitting}}
-          class="btn-primary"
-        >
-          {{#if this.isSubmitting}}
-            创建中...
-          {{else}}
-            创建抽奖
-          {{/if}}
-        </DButton>
-      </:footer>
+        ),
+        footer: (
+          <>
+            <DButton action={resetForm} disabled={isSubmitting} class="btn-default">
+              重置
+            </DButton>
+            <DModalCancel close={closeModal} />
+            <DButton type="submit" action={submitForm} disabled={isSubmitting} class="btn-primary">
+              {isSubmitting ? "创建中..." : "创建抽奖"}
+            </DButton>
+          </>
+        ),
+      }}
     </DModal>
-  </template>
+  );
 }
