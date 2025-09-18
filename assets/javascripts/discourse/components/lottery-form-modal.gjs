@@ -34,7 +34,6 @@ export default class LotteryFormModal extends Component {
 
   @action
   updateField(fieldName, event) {
-    if (!event?.target) return;
     this.formData = {
       ...this.formData,
       [fieldName]: event.target.value
@@ -43,12 +42,15 @@ export default class LotteryFormModal extends Component {
 
   @action
   async submitForm(event) {
-    event?.preventDefault();
+    event.preventDefault();
     this.isSubmitting = true;
     
     try {
       console.log("提交数据:", this.formData);
-      this.args.closeModal?.();
+      // 这里添加你的提交逻辑
+      
+      // 提交成功后关闭模态框
+      this.args.closeModal();
     } catch (error) {
       console.error("提交失败:", error);
     } finally {
@@ -71,17 +73,8 @@ export default class LotteryFormModal extends Component {
     };
   }
 
-  @action
-  cancel() {
-    this.args.closeModal?.();
-  }
-
   <template>
-    <DModal 
-      @title="创建抽奖活动"
-      @closeModal={{@closeModal}}
-      class="lottery-form-modal"
-    >
+    <DModal @title="创建抽奖活动" @closeModal={{@closeModal}}>
       <:body>
         <div class="lottery-form-container">
           <form {{on "submit" this.submitForm}}>
@@ -199,29 +192,27 @@ export default class LotteryFormModal extends Component {
       </:body>
 
       <:footer>
-        <div class="modal-footer-buttons">
-          <DButton
-            @action={{this.resetForm}}
-            @disabled={{this.isSubmitting}}
-            class="btn-default"
-          >
-            重置
-          </DButton>
+        <DButton
+          @action={{this.resetForm}}
+          @disabled={{this.isSubmitting}}
+          class="btn-default"
+        >
+          重置
+        </DButton>
 
-          <DModalCancel @close={{this.cancel}} />
+        <DModalCancel @close={{@closeModal}} />
 
-          <DButton
-            @action={{this.submitForm}}
-            @disabled={{this.isSubmitting}}
-            class="btn-primary"
-          >
-            {{#if this.isSubmitting}}
-              创建中...
-            {{else}}
-              创建抽奖
-            {{/if}}
-          </DButton>
-        </div>
+        <DButton
+          @action={{this.submitForm}}
+          @disabled={{this.isSubmitting}}
+          class="btn-primary"
+        >
+          {{#if this.isSubmitting}}
+            创建中...
+          {{else}}
+            创建抽奖
+          {{/if}}
+        </DButton>
       </:footer>
     </DModal>
   </template>
