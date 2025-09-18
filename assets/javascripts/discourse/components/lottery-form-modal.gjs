@@ -24,6 +24,7 @@ export default class LotteryFormModal extends Component {
   @tracked validationErrors = {};
   @tracked isSubmitting = false;
 
+  // 确保这个getter总是返回有效数组
   get backupStrategyOptions() {
     return [
       { value: "continue", label: "继续抽奖直到找到有效参与者" },
@@ -34,6 +35,8 @@ export default class LotteryFormModal extends Component {
 
   @action
   updateField(fieldName, event) {
+    if (!event || !event.target) return;
+    
     this.formData = {
       ...this.formData,
       [fieldName]: event.target.value
@@ -42,20 +45,20 @@ export default class LotteryFormModal extends Component {
 
   @action
   async submitForm(event) {
-    event.preventDefault();
+    if (event) {
+      event.preventDefault();
+    }
+    
     this.isSubmitting = true;
     
     try {
-      // 验证表单
-      if (!this.validateForm()) {
-        return;
-      }
-
       console.log("提交数据:", this.formData);
-      // 这里添加你的API调用逻辑
+      // 这里添加你的提交逻辑
       
       // 提交成功后关闭模态框
-      this.args.closeModal();
+      if (this.args.closeModal) {
+        this.args.closeModal();
+      }
     } catch (error) {
       console.error("提交失败:", error);
     } finally {
@@ -79,33 +82,6 @@ export default class LotteryFormModal extends Component {
     this.validationErrors = {};
   }
 
-  validateForm() {
-    const errors = {};
-    
-    if (!this.formData.activity_name?.trim()) {
-      errors.activity_name = "活动名称不能为空";
-    }
-    
-    if (!this.formData.prize_description?.trim()) {
-      errors.prize_description = "奖品说明不能为空";
-    }
-    
-    if (!this.formData.draw_time) {
-      errors.draw_time = "开奖时间不能为空";
-    }
-    
-    if (!this.formData.winner_count || this.formData.winner_count < 1) {
-      errors.winner_count = "获奖人数必须大于0";
-    }
-    
-    if (!this.formData.participation_threshold || this.formData.participation_threshold < 0) {
-      errors.participation_threshold = "参与门槛不能小于0";
-    }
-
-    this.validationErrors = errors;
-    return Object.keys(errors).length === 0;
-  }
-
   <template>
     <DModal @title="创建抽奖活动" @closeModal={{@closeModal}} class="lottery-form-modal">
       <:body>
@@ -118,15 +94,12 @@ export default class LotteryFormModal extends Component {
               </label>
               <input
                 type="text"
-                class="form-control {{if this.validationErrors.activity_name 'error'}}"
+                class="form-control"
                 value={{this.formData.activity_name}}
                 placeholder="请输入活动名称"
                 {{on "input" (fn this.updateField "activity_name")}}
                 maxlength="200"
               />
-              {{#if this.validationErrors.activity_name}}
-                <div class="validation-error">{{this.validationErrors.activity_name}}</div>
-              {{/if}}
             </div>
 
             <div class="form-group">
@@ -135,15 +108,12 @@ export default class LotteryFormModal extends Component {
               </label>
               <input
                 type="text"
-                class="form-control {{if this.validationErrors.prize_description 'error'}}"
+                class="form-control"
                 value={{this.formData.prize_description}}
                 placeholder="请描述奖品内容"
                 {{on "input" (fn this.updateField "prize_description")}}
                 maxlength="1000"
               />
-              {{#if this.validationErrors.prize_description}}
-                <div class="validation-error">{{this.validationErrors.prize_description}}</div>
-              {{/if}}
             </div>
 
             <div class="form-group">
@@ -165,13 +135,10 @@ export default class LotteryFormModal extends Component {
               </label>
               <input
                 type="datetime-local"
-                class="form-control {{if this.validationErrors.draw_time 'error'}}"
+                class="form-control"
                 value={{this.formData.draw_time}}
                 {{on "input" (fn this.updateField "draw_time")}}
               />
-              {{#if this.validationErrors.draw_time}}
-                <div class="validation-error">{{this.validationErrors.draw_time}}</div>
-              {{/if}}
             </div>
 
             <div class="form-group">
@@ -180,7 +147,7 @@ export default class LotteryFormModal extends Component {
               </label>
               <input
                 type="number"
-                class="form-control {{if this.validationErrors.winner_count 'error'}}"
+                class="form-control"
                 value={{this.formData.winner_count}}
                 min="1"
                 {{on "input" (fn this.updateField "winner_count")}}
@@ -188,9 +155,6 @@ export default class LotteryFormModal extends Component {
               <div class="form-help">
                 这是随机抽奖时的获奖人数。如果您想按指定楼层开奖，请直接填写下面的'指定中奖楼层'项。
               </div>
-              {{#if this.validationErrors.winner_count}}
-                <div class="validation-error">{{this.validationErrors.winner_count}}</div>
-              {{/if}}
             </div>
 
             <div class="form-group">
@@ -215,15 +179,12 @@ export default class LotteryFormModal extends Component {
               </label>
               <input
                 type="number"
-                class="form-control {{if this.validationErrors.participation_threshold 'error'}}"
+                class="form-control"
                 value={{this.formData.participation_threshold}}
                 min="0"
                 {{on "input" (fn this.updateField "participation_threshold")}}
               />
               <div class="form-help">参与抽奖所需的最小楼层数</div>
-              {{#if this.validationErrors.participation_threshold}}
-                <div class="validation-error">{{this.validationErrors.participation_threshold}}</div>
-              {{/if}}
             </div>
 
             <div class="form-group">
