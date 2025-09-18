@@ -1,30 +1,44 @@
+// 移动端特定样式
 .lottery-form-modal {
-  @media (max-width: 768px) {
+  @media (max-width: 480px) {
     .modal-middle-container {
-      margin: 10px;
-      max-height: calc(100vh - 20px);
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      border-radius: 0;
     }
     
     .lottery-form-container {
-      padding: 15px;
+      padding: 10px;
+      max-height: calc(100vh - 120px);
     }
     
     .form-group {
-      margin-bottom: 18px;
+      margin-bottom: 15px;
+    }
+    
+    .modal-footer {
+      padding: 15px 10px;
+    }
+  }
+  
+  // 横屏优化
+  @media (orientation: landscape) and (max-height: 500px) {
+    .lottery-form-container {
+      max-height: calc(100vh - 80px);
+      padding: 10px;
+    }
+    
+    .form-group {
+      margin-bottom: 12px;
       
-      .form-control {
-        font-size: 16px; // 防止iOS缩放
-        min-height: 44px;
+      .form-help {
+        display: none; // 横屏时隐藏帮助文本节省空间
       }
     }
     
-    .modal-footer-buttons {
-      flex-direction: column-reverse;
-      
-      .btn {
-        width: 100%;
-        margin: 5px 0;
-      }
+    .modal-footer {
+      padding: 10px;
     }
   }
 }
