@@ -1,141 +1,30 @@
-// 移动端抽奖模态框样式
 .lottery-form-modal {
-  .modal-middle-container {
-    margin: 10px;
-    max-height: calc(100vh - 20px);
-  }
-  
-  .lottery-form-container {
-    padding: 15px;
-  }
-  
-  .form-group {
-    margin-bottom: 20px;
-    
-    .form-label {
-      font-size: 16px;
-      margin-bottom: 8px;
+  @media (max-width: 768px) {
+    .modal-middle-container {
+      margin: 10px;
+      max-height: calc(100vh - 20px);
     }
     
-    .form-control {
-      padding: 12px;
-      font-size: 16px; // 防止iOS缩放
-      min-height: 44px; // iOS触摸目标最小尺寸
+    .lottery-form-container {
+      padding: 15px;
+    }
+    
+    .form-group {
+      margin-bottom: 18px;
       
-      &[type="datetime-local"] {
-        // 移动端日期时间选择器样式调整
-        background: var(--secondary);
-      }
-      
-      &[type="number"] {
-        // 数字输入框在移动端的优化
-        -webkit-appearance: none;
-        -moz-appearance: textfield;
+      .form-control {
+        font-size: 16px; // 防止iOS缩放
+        min-height: 44px;
       }
     }
     
-    textarea.form-control {
-      resize: vertical;
-      min-height: 100px;
-    }
-    
-    select.form-control {
-      background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23666' d='m2 0-2 2h4zm0 5 2-2h-4z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      background-size: 12px;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
-    }
-    
-    .form-help {
-      font-size: 13px;
-      line-height: 1.4;
-      margin-top: 8px;
-    }
-  }
-  
-  .modal-footer-buttons {
-    flex-direction: column-reverse;
-    gap: 12px;
-    
-    .btn {
-      width: 100%;
-      min-height: 44px;
-      font-size: 16px;
-    }
-    
-    // 在小屏幕上保持水平布局如果有空间
-    @media (min-width: 400px) {
-      flex-direction: row;
-      justify-content: space-between;
+    .modal-footer-buttons {
+      flex-direction: column-reverse;
       
       .btn {
-        width: auto;
-        flex: 1;
-        
-        &:not(:last-child) {
-          margin-right: 8px;
-        }
+        width: 100%;
+        margin: 5px 0;
       }
-    }
-  }
-  
-  // 针对非常小的屏幕
-  @media (max-width: 350px) {
-    .lottery-form-container {
-      padding: 10px;
-    }
-    
-    .form-group {
-      margin-bottom: 15px;
-    }
-  }
-  
-  // 横屏模式优化
-  @media (orientation: landscape) and (max-height: 500px) {
-    .modal-middle-container {
-      margin: 5px;
-      max-height: calc(100vh - 10px);
-    }
-    
-    .lottery-form-container {
-      padding: 10px;
-    }
-    
-    .form-group {
-      margin-bottom: 12px;
-    }
-    
-    .form-help {
-      display: none; // 在横屏小屏幕时隐藏帮助文本以节省空间
-    }
-  }
-}
-
-// 移动端特定的输入优化
-.discourse-touch {
-  .lottery-form-modal {
-    .form-control:focus {
-      // 移动端聚焦时的样式调整
-      transform: none; // 防止某些移动浏览器的缩放
-    }
-    
-    // 确保选择框在触摸设备上易于操作
-    select.form-control {
-      padding-right: 40px;
-    }
-  }
-}
-
-// iOS Safari 特定优化
-@supports (-webkit-touch-callout: none) {
-  .lottery-form-modal {
-    .form-control[type="datetime-local"] {
-      // iOS日期选择器的特定样式
-      -webkit-appearance: none;
-      background-color: var(--secondary);
     }
   }
 }
