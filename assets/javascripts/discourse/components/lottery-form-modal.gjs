@@ -3,19 +3,14 @@ import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
 import { service } from "@ember/service";
-import { fn } from "@ember/helper";
 import { on } from "@ember/modifier";
-import { eq } from "truth-helpers";
+import { fn } from "@ember/helper";
 import DModal from "discourse/components/d-modal";
 import DButton from "discourse/components/d-button";
 import DModalCancel from "discourse/components/d-modal-cancel";
-import { ajax } from "discourse/lib/ajax";
-import { extractError } from "discourse/lib/ajax-error";
 
 export default class LotteryFormModal extends Component {
   @service modal;
-  @service currentUser;
-  @service site;
   
   @tracked formData = {
     activity_name: "",
@@ -31,14 +26,6 @@ export default class LotteryFormModal extends Component {
 
   @tracked validationErrors = {};
   @tracked isSubmitting = false;
-
-  constructor() {
-    super(...arguments);
-    
-    // 获取传入的服务和事件
-    this.appEvents = this.args.model?.appEvents || this.modal.args?.appEvents;
-    this.toolbarEvent = this.args.model?.toolbarEvent;
-  }
 
   get backupStrategyOptions() {
     return [
@@ -76,7 +63,7 @@ export default class LotteryFormModal extends Component {
     this.validationErrors = {};
     
     try {
-      // 前端验证
+      // 基础验证
       const errors = this.validateForm();
       if (Object.keys(errors).length > 0) {
         this.validationErrors = errors;
@@ -85,40 +72,14 @@ export default class LotteryFormModal extends Component {
 
       console.log("提交数据:", this.formData);
       
-      // 实际的API调用 - 准备后端接口
-      // const response = await ajax('/lottery/events', {
-      //   type: 'POST',
-      //   data: { 
-      //     lottery_event: this.formData,
-      //     post_id: this.getCurrentPostId()
-      //   }
-      // });
-
-      // 模拟成功创建
+      // 模拟API调用
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // 使用appEvents显示成功消息
-      if (this.appEvents) {
-        this.appEvents.trigger("modal-body:flash", {
-          text: "抽奖活动创建成功！",
-          messageClass: "success"
-        });
-      }
-      
       // 关闭模态框
-      setTimeout(() => {
-        this.args.closeModal();
-      }, 1500);
+      this.args.closeModal({ submitted: true });
       
     } catch (error) {
       console.error("提交失败:", error);
-      
-      if (this.appEvents) {
-        this.appEvents.trigger("modal-body:flash", {
-          text: extractError(error) || "创建失败，请重试",
-          messageClass: "error"
-        });
-      }
     } finally {
       this.isSubmitting = false;
     }
@@ -138,12 +99,6 @@ export default class LotteryFormModal extends Component {
       additional_notes: ""
     };
     this.validationErrors = {};
-  }
-
-  @action
-  closeModal() {
-    // 使用传入的closeModal回调
-    this.args.closeModal();
   }
 
   validateForm() {
@@ -174,34 +129,11 @@ export default class LotteryFormModal extends Component {
       errors.participation_threshold = "参与门槛不能小于0";
     }
     
-    // 验证指定楼层格式
-    if (this.formData.specific_floors?.trim()) {
-      const floors = this.formData.specific_floors.split(',');
-      const invalidFloors = floors.some(floor => 
-        isNaN(parseInt(floor.trim())) || parseInt(floor.trim()) <= 0
-      );
-      
-      if (invalidFloors) {
-        errors.specific_floors = "楼层格式不正确，请使用数字并用逗号分隔";
-      }
-    }
-    
     return errors;
   }
 
-  getCurrentPostId() {
-    // 这里需要获取当前编辑的帖子ID
-    // 可能需要从toolbar传入或者其他方式获取
-    return this.toolbarEvent?.model?.id;
-  }
-
   <template>
-    <DModal 
-      @title="创建抽奖活动" 
-      @closeModal={{this.closeModal}}
-      @flash={{this.flash}}
-      class="lottery-form-modal"
-    >
+    <DModal @title="创建抽奖活动" @closeModal={{@closeModal}} class="lottery-form-modal">
       <:body>
         <div class="lottery-form-container">
           <form {{on "submit" this.submitForm}}>
@@ -217,7 +149,6 @@ export default class LotteryFormModal extends Component {
                 placeholder="请输入活动名称"
                 {{on "input" (fn this.updateField "activity_name")}}
                 maxlength="200"
-                required
               />
               {{#if this.validationErrors.activity_name}}
                 <div class="validation-error">{{this.validationErrors.activity_name}}</div>
@@ -235,7 +166,6 @@ export default class LotteryFormModal extends Component {
                 placeholder="请描述奖品内容"
                 {{on "input" (fn this.updateField "prize_description")}}
                 maxlength="1000"
-                required
               />
               {{#if this.validationErrors.prize_description}}
                 <div class="validation-error">{{this.validationErrors.prize_description}}</div>
@@ -264,7 +194,6 @@ export default class LotteryFormModal extends Component {
                 class="form-control {{if this.validationErrors.draw_time 'error'}}"
                 value={{this.formData.draw_time}}
                 {{on "input" (fn this.updateField "draw_time")}}
-                required
               />
               {{#if this.validationErrors.draw_time}}
                 <div class="validation-error">{{this.validationErrors.draw_time}}</div>
@@ -281,7 +210,6 @@ export default class LotteryFormModal extends Component {
                 value={{this.formData.winner_count}}
                 min="1"
                 {{on "input" (fn this.updateField "winner_count")}}
-                required
               />
               {{#if this.validationErrors.winner_count}}
                 <div class="validation-error">{{this.validationErrors.winner_count}}</div>
@@ -297,14 +225,11 @@ export default class LotteryFormModal extends Component {
               </label>
               <input
                 type="text"
-                class="form-control {{if this.validationErrors.specific_floors 'error'}}"
+                class="form-control"
                 value={{this.formData.specific_floors}}
                 placeholder="例如：8, 18, 28"
                 {{on "input" (fn this.updateField "specific_floors")}}
               />
-              {{#if this.validationErrors.specific_floors}}
-                <div class="validation-error">{{this.validationErrors.specific_floors}}</div>
-              {{/if}}
               <div class="form-help">
                 （可选）填写此项将覆盖随机抽奖。请在此填写具体的楼层号，用英文逗号分隔，例如：8, 18, 28。
               </div>
@@ -320,7 +245,6 @@ export default class LotteryFormModal extends Component {
                 value={{this.formData.participation_threshold}}
                 min="0"
                 {{on "input" (fn this.updateField "participation_threshold")}}
-                required
               />
               {{#if this.validationErrors.participation_threshold}}
                 <div class="validation-error">{{this.validationErrors.participation_threshold}}</div>
@@ -339,7 +263,7 @@ export default class LotteryFormModal extends Component {
                 {{#each this.backupStrategyOptions as |option|}}
                   <option
                     value={{option.value}}
-                    selected={{eq this.formData.backup_strategy option.value}}
+                    selected={{if (eq this.formData.backup_strategy option.value) "selected"}}
                   >
                     {{option.label}}
                   </option>
@@ -368,17 +292,23 @@ export default class LotteryFormModal extends Component {
           @action={{this.resetForm}}
           @disabled={{this.isSubmitting}}
           class="btn-default"
-          @translatedLabel="重置"
-        />
+        >
+          重置
+        </DButton>
 
-        <DModalCancel @close={{this.closeModal}} />
+        <DModalCancel @close={{@closeModal}} />
 
         <DButton
           @action={{this.submitForm}}
           @disabled={{this.isSubmitting}}
           class="btn-primary"
-          @translatedLabel={{if this.isSubmitting "创建中..." "创建抽奖"}}
-        />
+        >
+          {{#if this.isSubmitting}}
+            创建中...
+          {{else}}
+            创建抽奖
+          {{/if}}
+        </DButton>
       </:footer>
     </DModal>
   </template>
