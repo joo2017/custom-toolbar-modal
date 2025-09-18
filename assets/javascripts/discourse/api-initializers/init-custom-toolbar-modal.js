@@ -1,6 +1,5 @@
 // assets/javascripts/discourse/api-initializers/init-custom-toolbar-modal.js
 import { withPluginApi } from "discourse/lib/plugin-api";
-import LotteryFormModal from "../components/lottery-form-modal";
 
 export default {
   name: "init-custom-toolbar-modal",
@@ -13,11 +12,9 @@ export default {
           group: "extras", 
           icon: "gift",
           action: () => {
-            const modalService = api.container.lookup("service:modal");
-            modalService.show(LotteryFormModal, {
-              model: {
-                toolbarEvent: toolbar
-              }
+            const appEvents = api.container.lookup("service:app-events");
+            appEvents.trigger("lottery:show-modal", {
+              toolbarEvent: toolbar
             });
           }
         });
